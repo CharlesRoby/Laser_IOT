@@ -3,7 +3,7 @@
 #include <HTTPClient.h>
 
 // INPUTS ESP32
-int pin = 35;    // Photoresistor
+int pin = 35; // Photoresistor
 int sensorValue;
 int crossed = 0;
 int last = 0;
@@ -42,61 +42,62 @@ enum State
 };
 
 // Class Timer
-class Timer {
-	unsigned long _elapsed = 0;
-	unsigned long startTime = 0;
-  	unsigned long elapsedTime = 0;
-public:
+class Timer
+{
+    unsigned long _elapsed = 0;
+    unsigned long startTime = 0;
+    unsigned long elapsedTime = 0;
 
-	void start();
-	unsigned long elapsed();
-  	void saveElapsedTime();
-  	unsigned long getSaveElapsedTime();
+public:
+    void start();
+    unsigned long elapsed();
+    void saveElapsedTime();
+    unsigned long getSaveElapsedTime();
 };
 
-void Timer::start() {
-	startTime = millis();
+void Timer::start()
+{
+    startTime = millis();
 }
 
 unsigned long Timer::elapsed()
 {
-	_elapsed = millis() - startTime;
-	return _elapsed;
+    _elapsed = millis() - startTime;
+    return _elapsed;
 }
 
 void Timer::saveElapsedTime()
 {
-	_elapsed = millis() - startTime;
-  	elapsedTime = _elapsed;
+    _elapsed = millis() - startTime;
+    elapsedTime = _elapsed;
 }
 
 unsigned long Timer::getSaveElapsedTime() { return elapsedTime; }
-
-
 
 // Class FSM
 class FSM
 {
     State mCurrentState;
-  	State _oldstate;
+    State _oldstate;
 
 public:
     FSM();
 
-    bool checkState(State source, State target, bool condition_millis, bool condition_signal, Timer* timer);
-    
+    bool checkState(State source, State target, bool condition_millis, bool condition_signal, Timer *timer);
+
     State getCurrentState();
-  	State getOldState();
-  	void setOldState(State State);
+    State getOldState();
+    void setOldState(State State);
 };
 
-FSM::FSM() {
+FSM::FSM()
+{
     mCurrentState = UNKNOWN;
-  	_oldstate = UNKNOWN;
+    _oldstate = UNKNOWN;
 }
 
 // Function checkstate
-bool FSM::checkState(State source, State target, bool condition_millis = true, bool condition_signal = true, Timer* timer = NULL)
+bool FSM::checkState(State source, State target, bool condition_millis = true, bool condition_signal = true, Timer *timer = NULL)
 {
 
     // if (source == mCurrentState && condition_millis && condition_signal)
@@ -109,19 +110,19 @@ bool FSM::checkState(State source, State target, bool condition_millis = true, b
     // }
 
     bool etat = false;
-	if (source == this->mCurrentState && condition_millis && condition_signal)
-	{
-		Serial.println("Change State : " + target);
-		this->mCurrentState = target;
-		
-      	if(NULL != timer)
-      	{
-      	  timer->start();
-      	}
-      
-      	etat = true;
-	}
-	return etat;
+    if (source == this->mCurrentState && condition_millis && condition_signal)
+    {
+        Serial.println("Change State : " + target);
+        this->mCurrentState = target;
+
+        if (NULL != timer)
+        {
+            timer->start();
+        }
+
+        etat = true;
+    }
+    return etat;
 }
 
 State FSM::getCurrentState() { return mCurrentState; }
@@ -130,8 +131,6 @@ void FSM::setOldState(State State) { _oldstate = State; }
 
 FSM fsm;
 Timer timer;
-
-
 
 bool receiveSignal()
 {
@@ -155,12 +154,10 @@ bool receiveSignal()
     }
 }
 
-
 void LedChange(int numled, bool ledstatus = false)
 {
     digitalWrite(numled, ledstatus);
 }
-
 
 void setup()
 {
@@ -186,25 +183,24 @@ void RunFsm()
 {
     fsm.checkState(UNKNOWN, WAITING, true, true);
     fsm.checkState(WAITING, CHECK_BIT1, (timer.elapsed() > 500 && receiveSignal()), &timer);
-    
+
     fsm.checkState(CHECK_BIT1, CHECK_BIT2, (timer.elapsed() > 500 && receiveSignal()), &timer);
-    //fsm.checkState(CHECK_BIT1, WAITING, (timer.elapsed() > 1500 && !receiveSignal()), &timer);
+    fsm.checkState(CHECK_BIT1, WAITING, (timer.elapsed() > 500 && !receiveSignal()), &timer);
 
     fsm.checkState(CHECK_BIT2, CHECK_BIT3, (timer.elapsed() > 500 && !receiveSignal()), &timer);
-    //fsm.checkState(CHECK_BIT2, WAITING, (timer.elapsed() > 1500 && !receiveSignal()), &timer);
-    
+    fsm.checkState(CHECK_BIT2, WAITING, (timer.elapsed() > 500 && !receiveSignal()), &timer);
+
     fsm.checkState(CHECK_BIT3, CHECK_BIT4, (timer.elapsed() > 500 && receiveSignal()), &timer);
-    //fsm.checkState(CHECK_BIT3, WAITING, (timer.elapsed() > 1500 && !receiveSignal()), &timer);
-    
-    fsm.checkState(CHECK_BIT4, CHECK_BIT5, (timer.elapsed() > 500 && receiveSignal()), &timer);
-    //fsm.checkState(CHECK_BIT4, WAITING, (timer.elapsed() > 1500 && !receiveSignal()), &timer);
-    
+    fsm.checkState(CHECK_BIT3, WAITING, (timer.elapsed() > 500 && !receiveSignal()), &timer);
+
+    fsm.checkState(CHECK_BIT4, CHECK_BIT5, (timer.elapsed() > 500), &timer);
+    fsm.checkState(CHECK_BIT4, WAITING, (timer.elapsed() > 500 && !receiveSignal()), &timer);
+
     fsm.checkState(CHECK_BIT5, HIT, (timer.elapsed() > 500 && receiveSignal()), &timer);
-    //fsm.checkState(CHECK_BIT5, WAITING, (timer.elapsed() > 1500 && !receiveSignal()), &timer);
+    fsm.checkState(CHECK_BIT5, WAITING, (timer.elapsed() > 500 && !receiveSignal()), &timer);
 
     fsm.checkState(HIT, WAITING, (timer.elapsed() > 500 && receiveSignal()), &timer);
 }
-
 
 void loop()
 {
@@ -275,7 +271,7 @@ void loop()
         break;
     case CHECK_BIT5:
         LedChange(UNKNOWN_LED, true);
-        LedChange(WAITING_LED, false);
+        LedChange(WAITING_LED, true);
         LedChange(CHECK_BIT1_LED, true);
         LedChange(CHECK_BIT2_LED, true);
         LedChange(CHECK_BIT3_LED, true);
@@ -295,4 +291,3 @@ void loop()
         break;
     }
 }
-
