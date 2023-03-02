@@ -132,6 +132,8 @@ void FSM::setOldState(State State) { _oldstate = State; }
 
 FSM fsm;
 Timer timer;
+int data;
+int dataCheck;
 
 bool receiveSignal()
 {
@@ -151,11 +153,33 @@ bool receiveSignal()
     }
 }
 
+void saveData()
+{
+    sensorValue = analogRead(pin);
+    if (sensorValue >= 500)
+    {
+        data = 1;
+    }
+    else
+    {
+        data = 0;
+    }
+}
+
 bool checkParity()
 {
-    // TODO check la parité
+    sensorValue = analogRead(pin);
 
-    if (/* parity ok */true)
+    if (sensorValue >= 500)
+    {
+        dataCheck = 1;
+    }
+    else
+    {
+        dataCheck = 0;
+    }
+
+    if (data != dataCheck)
     {
         return true;
     }
@@ -280,6 +304,7 @@ void loop()
         LedChange(CHECK_BIT4_LED, true);
         LedChange(CHECK_BIT5_LED, false);
         LedChange(HIT_LED, false);
+        saveData();
         break;
     case CHECK_BIT5:
         LedChange(UNKNOWN_LED, true);
